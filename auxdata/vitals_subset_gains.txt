@@ -1,0 +1,9 @@
+BMI # BMI
+BMI Percentile | BMI Percentile &gt;&gt; | BMI Percentile percent: | BMIPercentile # BMI Percentile
+HC | HC cm: # HC
+HC Percentile | HcPercentile # HC Percentile
+Ht | Ht ` | Ht in: | Ht inch: | Ht inches: # Ht
+Ht Percentile | Ht Percentile &gt; | Ht Percentile approx: | Ht Percentile approx. | Ht Percentile approx.: | Ht Percentile below | Ht Percentile cms: | Ht Percentile greater than | Ht Percentile less than: | HtPercentile # Ht Percentile
+Wt | Wt ., | Wt ` | Wt est | Wt lb: | Wt pounds: # Wt
+Wt Percentile | Wt Percentile &gt; | Wt Percentile approx | Wt Percentile approx: | Wt Percentile approx. | Wt Percentile approx.: | Wt Percentile greater than | Wt Percentile greater than: | Wt Percentile lbs: | Wt Percentile less than: | WtPercentile # Wt Percentile
+Wt for Ht Percentile # Wt for Len Percentile

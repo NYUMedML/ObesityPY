@@ -1,0 +1,10 @@
+# Ignore Python data objects
+python objects/
+
+# Ignore unnecessary Python/Juypter/etc files
+.ipynb_checkpoints/
+__pycache__/
+.python-version
+profile_default/
+ipython_config.py
+*.pyc

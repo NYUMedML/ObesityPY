@@ -1,0 +1,22 @@
+BMI # BMI
+BMI Percentile | BMI Percentile &gt;&gt; | BMI Percentile percent: | BMIPercentile # BMI Percentile
+Fundal Ht # Fundal Ht
+HC | HC cm: # HC
+HC Percentile | HcPercentile # HC Percentile
+Ht | Ht ` | Ht in: | Ht inch: | Ht inches: # Ht
+Ht Percentile | Ht Percentile &gt; | Ht Percentile approx: | Ht Percentile approx. | Ht Percentile approx.: | Ht Percentile below | Ht Percentile cms: | Ht Percentile greater than | Ht Percentile less than: | HtPercentile # Ht Percentile
+Pre-gravid Wt | Pre-gravid Wt ? | Pre-gravid Wt CT+ Recall, bloods to be drawn | Pre-gravid Wt SAME DAY c/o abdominal pain x | Pre-gravid Wt Walk-in r/t lip pain with # Pre-gravid Wt
+Wt | Wt ., | Wt ` | Wt est | Wt lb: | Wt pounds: # Wt
+Wt Change | Wt Change - | WtChange # Wt Change
+Wt Percentile | Wt Percentile &gt; | Wt Percentile approx | Wt Percentile approx: | Wt Percentile approx. | Wt Percentile approx.: | Wt Percentile greater than | Wt Percentile greater than: | Wt Percentile lbs: | Wt Percentile less than: | WtPercentile # Wt Percentile
+Temp # Temp
+BP # BP
+HR # HR
+Wt for Ht Percentile # Wt for Len Percentile
+PL # PL
+SpO2 # SpO2
+RR # RR
+PEF # PEF
+Hearing # Hearing
+Vision # Vision
+PainScale # PainScale
