@@ -15,6 +15,9 @@ def init():
     	load_CDC_refs()
 
 def load_WHO_refs(girls_inputfile='None', boys_inputfile='None'):
+    """"
+    Load the WHO weight for length data and transform into an easy-to-use format for later.
+    """
     if girls_inputfile == 'None':
         girls_inputfile = config.wght4leng_girl
     if boys_inputfile == 'None':
@@ -27,6 +30,9 @@ def load_WHO_refs(girls_inputfile='None', boys_inputfile='None'):
     WHO_percentiles['length'] = rawdata[:,0].tolist()
 
 def load_CDC_refs(girls_inputfile='None', boys_inputfile='None'):
+    """"
+    Load the CDC BMI data and transform into an easy-to-use format for later.
+    """
     if girls_inputfile == 'None':
         girls_inputfile = config.bmi_girl
     if boys_inputfile == 'None':
@@ -39,6 +45,9 @@ def load_CDC_refs(girls_inputfile='None', boys_inputfile='None'):
     CDC_percentiles['age'] = rawdata[:,0].tolist()
 
 def linear_interpolation(val1, x_1, x_2, y_1, y_2):
+    """"
+    Linear interpoloation of between two 2-D points
+    """
     return y_1 + ((y_2 - y_1) * (val1 - x_1) / (x_2 - x_1))
 
 def zscore_wfl(gender, length, weight, units='metric'):
@@ -48,14 +57,25 @@ def zscore_wfl(gender, length, weight, units='metric'):
     forced to sign(Z) * 1
     NOTE: This should only be used for children under the age of 2 as BMI values cannot be accurately recorded until 2 years of age.
 
-    #### PARAMETERS ####
-    parameters should either be arrays or single items
-    gender: 0 for male, 1 for female
-    length: length/height
-    weight: weight
-    units: default = 'metric'.
-        'metric': lengths/weights assumed to be in cm/kg respectively
-        'usa': lengths/weights assumed to be in in/lb respectively
+    Parameters
+    ----------
+    gender : int or np.ndarray
+        Gender of patient.
+            0 : male
+            1 : female
+    length : int or float or np.ndarray
+        Length/height of patient.
+    weight : int or float or np.ndarray
+        Weight of patient.
+    units : str, default 'metric'.
+        Units of measure for the readings provided. All should be in the same grouping
+            metric : cm/kg
+            usa : in/lb
+
+    Returns
+    -------
+    Z : float or array
+        Weight for length z-score for the height and weight measurement(s) provided.
     """
     if units not in ('metric','usa'):
         raise ValueError('Invalid measurement systm. Must be "metric" or "usa".')
@@ -118,14 +138,25 @@ def zscore_bmi(gender, age, bmi, unit='months'):
     forced to sign(Z) * 1
     NOTE: This should only be used for anyone between the ages of 2 and 20.
 
-    #### PARAMETERS ####
-    parameters should either be arrays or single items
-    gender: 0 for male, 1 for female
-    age: age in months between 24 and 240
-    bmi: bmi
-    unit: default = 'months'
-        'months': age in months
-        'years': age in years
+    Parameters
+    ----------
+    gender : int or np.ndarray
+        Gender of patient.
+            0 : male
+            1 : female
+    age : int or float or np.ndarray
+        Age of patient in months or years.
+    bmi : int or float or np.ndarray
+        BMI of patient.
+    unit : str, default = 'months'
+        Unit of measure for age.
+            months : age in months
+            years : age in years
+    
+    Returns
+    -------
+    Z : float or np.ndarray
+        Z-score for a patient given their age and BMI.
     """
     global CDC_percentiles
     if unit not in ('years','months'):
@@ -191,17 +222,29 @@ def severe_obesity_wfl(gender, length, weight, units='metric', severity=1):
     https://jamanetwork.com/journals/jamapediatrics/fullarticle/2667557.
     NOTE: This should only be used for children under the age of 2 as BMI values cannot be accurately recorded until 2 years of age.
 
-    #### PARAMETERS ####
-    parameters should either be arrays or single items
-    gender: 0 for male, 1 for female
-    length: length/height
-    weight: weight
-    units: default = 'metric'.
-        'metric': lengths/weights assumed to be in cm/kg respectively
-        'usa': lengths/weights assumed to be in in/lb respectively
-    severity: default = 1
-        1: class I severe obesity; 120% of the 95th percentile of the BMI z score
-        2: class II severe obesity; 140% of the 95th percentile of the BMI z score
+    Parameters
+    ----------
+    gender : int or np.ndarray
+        Gender of patient.
+            0 : male
+            1 : female
+    length : int or float or np.ndarray
+        Length/height of patient.
+    weight : int or float or np.ndarray
+        Weight of patient.
+    units : str, default 'metric'.
+        Units of measure for the readings provided. All should be in the same grouping
+            metric : cm/kg
+            usa : in/lb
+    severity : int, default 1
+        Severity class of obesity.
+            1 : class I severe obesity; >= 120% of the 95th percentile of the BMI z score
+            2 : class II severe obesity; >= 140% of the 95th percentile of the BMI z score
+
+    Returns
+    -------
+    Z : bool or np.ndarray
+        Boolean indicator for if a child belongs to the provided severity class.
     """
     if units not in ('metric','usa'):
         raise ValueError('Invalid measurement systm. Must be "metric" or "usa".')
@@ -267,21 +310,32 @@ def severe_obesity_bmi(gender, age, bmi, unit='months', severity=1):
     forced to sign(Z) * 1
     NOTE: This should only be used for anyone between the ages of 2 and 20.
 
-    #### PARAMETERS ####
-    parameters should either be arrays or single items
-    gender: 0 for male, 1 for female
-    age: age in months between 24 and 240
-    bmi: bmi
-    unit: default = 'months'
-        'months': age in months
-        'years': age in years
+    Parameters
+    ----------
+    gender : int or np.ndarray
+        Gender of patient.
+            0 : male
+            1 : female
+    age : int or float or np.ndarray
+        Age of patient in months or years.
+    bmi : int or float or np.ndarray
+        BMI of patient.
+    unit : str, default = 'months'
+        Unit of measure for age.
+            months : age in months
+            years : age in years
+    
+    Returns
+    -------
+    Z : bool or np.ndarray
+        Boolean indicator for if a child belongs to the provided severity class.
     """
 
     global CDC_percentiles
-    severe1 = {0: CDC_percentiles[0][:,11] * 1.2,
-              1: CDC_percentiles[1][:,11] * 1.2}
-    severe2 = {0: CDC_percentiles[0][:,11] * 1.4,
-              1: CDC_percentiles[1][:,11] * 1.4}
+    severe1 = {0: CDC_percentiles[0][:, 11] * 1.2,
+              1: CDC_percentiles[1][:, 11] * 1.2}
+    severe2 = {0: CDC_percentiles[0][:, 11] * 1.4,
+              1: CDC_percentiles[1][:, 11] * 1.4}
     if unit not in ('years','months'):
         raise ValueError('Invalid input for unit. Must be "years" or "months".')
     if unit == 'years':
@@ -294,7 +348,7 @@ def severe_obesity_bmi(gender, age, bmi, unit='months', severity=1):
     elif severity not in (1,2):
             raise ValueError('Invalid input for severity. Must be 1 or 2.')
 
-    if all([type(x) in (np.ndarray,list,tuple,set) for x in (gender,age,bmi)]):
+    if all([type(x) in (np.ndarray, list, tuple,set) for x in (gender, age, bmi)]):
         gender = np.array(gender); age = np.array(age); bmi = np.array(bmi)
         bmi = bmi.astype(float)
         severe = np.zeros(gender.reshape(-1,1).shape[0])

@@ -3,18 +3,35 @@ import time
 import pickle
 import zscore
 import warnings
+import datetime
+import functools
 import numpy as np
 import pandas as pd
 import config as config_file
 import matplotlib.pylab as plt
 import outcome_def_pediatric_obesity
+
 from scipy import stats
-from dateutil import parser
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from tqdm import tqdm
 
+def if_data_nonexistent(func):
+    """
+    Decorator function to return an array of zeros if the provided data dictionary does not have
+    the desired data categroy within it. Will ensure that incomplete data dictionaries can also be
+    used with call_build_function().
+    """
+    @functools.wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        try:
+            res = func(*args, **kwargs)
+        except:
+            res = np.zeros((len(args[-1])))
+        return res
+    return wrapper_decorator
 
+@if_data_nonexistent
 def build_features_icd(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=int)
     for diag in patient_data['diags']:
@@ -33,6 +50,7 @@ def build_features_icd(patient_data, maternal_data, maternal_hist_data, lat_lon_
             break
     return res
 
+@if_data_nonexistent
 def build_features_lab(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=float)
     for key1 in patient_data['labs']:
@@ -47,6 +65,7 @@ def build_features_lab(patient_data, maternal_data, maternal_hist_data, lat_lon_
             break
     return res
 
+@if_data_nonexistent
 def build_features_med(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     for key1 in patient_data['meds']:
@@ -67,6 +86,7 @@ def build_features_gen(patient_data, maternal_data, maternal_hist_data, lat_lon_
     res[feature_index[int(code)]] = True
     return res
 
+@if_data_nonexistent
 def build_features_vitalLatest(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=float)
     bdate = patient_data['bdate']
@@ -134,6 +154,7 @@ def build_features_vitalAverage_18_21(patient_data, maternal_data, maternal_hist
 def build_features_vitalAverage_18_24(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     return build_features_vitalAverage(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers, 18, 24)
 
+@if_data_nonexistent
 def build_features_vitalAverage(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers, frommonth, tomonth):
     res = np.zeros(len(feature_headers), dtype=float)
     res_cnt = np.zeros(len(feature_headers), dtype=float)
@@ -184,6 +205,7 @@ def build_features_vitalGain_16_24(patient_data, maternal_data, maternal_hist_da
 def build_features_vitalGain_0_24(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     return build_features_vitalGain(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers, 0, 0, 19, 24)
 
+@if_data_nonexistent
 def build_features_vitalGain(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers, startmonth1, endmonth1, startmonth2, endmonth2):
     """
     Computes the gain between two time periods
@@ -218,6 +240,7 @@ def build_features_vitalGain(patient_data, maternal_data, maternal_hist_data, la
     res = res2-res1
     return res
 
+@if_data_nonexistent
 def build_features_ethn(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     code = patient_data['ethnicity']
@@ -225,6 +248,7 @@ def build_features_ethn(patient_data, maternal_data, maternal_hist_data, lat_lon
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_mat_insurance1(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'insur1' not in maternal_data:
@@ -234,6 +258,8 @@ def build_features_mat_insurance1(patient_data, maternal_data, maternal_hist_dat
     if code in feature_index and pd.notnull(code):
         res[feature_index[code]] = True
     return res
+
+@if_data_nonexistent
 def build_features_mat_insurance2(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'insur2' not in maternal_data:
@@ -244,12 +270,14 @@ def build_features_mat_insurance2(patient_data, maternal_data, maternal_hist_dat
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_race(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     code = patient_data['race']
     if code in feature_index and pd.notnull(code):
         res[feature_index[code]] = True
     return res
+
 # def build_features_zipcd(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
 #     res = np.zeros(len(feature_headers), dtype=bool)
 #     if 'zip' in patient_data:
@@ -258,42 +286,42 @@ def build_features_race(patient_data, maternal_data, maternal_hist_data, lat_lon
 #             res[feature_index[code]] = True
 #     return res
 
+@if_data_nonexistent
 def build_features_zipcd_birth(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     """
     Creates a zip code feature associated with the address closest to the child's birth within 1 year.
     """
     res = np.zeros(len(feature_headers), dtype=bool)
     bdate = patient_data['bdate']
-    if 'zip' in patient_data:
-        ix = np.argsort([abs(bdate-z[0]) for z in patient_data['zip'] if abs(bdate-z[0]).days <= 365.])
-        if ix.ravel().shape[0] == 0:
-            return res
-        else:
-            code = str(patient_data['zip'][ix[0]][1])
-            try:
-                res[feature_index[code]] = True
-            except:
-                code = re.split('[. -]', code)[0]
-                res[feature_index[code]] = True
-            return res
+    ix = np.argsort([abs(bdate-z[0]) for z in patient_data['zip'] if abs(bdate-z[0]).days <= 365.])
+    if ix.ravel().shape[0] == 0:
+        return res
+    else:
+        code = str(patient_data['zip'][ix[0]][1])
+        try:
+            res[feature_index[code]] = True
+        except:
+            code = re.split('[. -]', code)[0]
+            res[feature_index[code]] = True
+        return res
 
+@if_data_nonexistent
 def build_features_zipcd_latest(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     """
     Creates a zip code feature associated with the latest address before reference_date_end.
     """
     res = np.zeros(len(feature_headers), dtype=bool)
-    if 'zip' in patient_data:
-        ix = np.argsort([reference_date_end-z[0] for z in patient_data['zip'] if (reference_date_end-z[0]).days >= 0])
-        if ix.ravel().shape[0] == 0:
-            return res
-        else:
-            code = str(patient_data['zip'][ix[0]][1])
-            try:
-                res[feature_index[code]] = True
-            except:
-                code = re.split('[. -]', code)[0]
-                res[feature_index[code]] = True
-            return res
+    ix = np.argsort([reference_date_end-z[0] for z in patient_data['zip'] if (reference_date_end-z[0]).days >= 0])
+    if ix.ravel().shape[0] == 0:
+        return res
+    else:
+        code = str(patient_data['zip'][ix[0]][1])
+        try:
+            res[feature_index[code]] = True
+        except:
+            code = re.split('[. -]', code)[0]
+            res[feature_index[code]] = True
+        return res
 
 # def build_features_census(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
 #     res = np.zeros(len(feature_headers), dtype=float)
@@ -310,6 +338,7 @@ def build_features_zipcd_latest(patient_data, maternal_data, maternal_hist_data,
 #             continue
 #     return res
 
+@if_data_nonexistent
 def build_features_census_birth(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     """
     Creates census level features that are associated with the address closest to the child's birth within 1 year.
@@ -338,6 +367,7 @@ def build_features_census_birth(patient_data, maternal_data, maternal_hist_data,
         pass
     return res
 
+@if_data_nonexistent
 def build_features_census_latest(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     """
     Creates census level features that are associated with the latest address before reference_date_end.
@@ -366,20 +396,29 @@ def build_features_census_latest(patient_data, maternal_data, maternal_hist_data
         pass
     return res
 
+@if_data_nonexistent
 def build_features_numVisits(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=int)
-    dates = []
-    for item in ['diags','vitals','labs','meds']:
-        if item in [*patient_data]:
-            dates += [dt[0] for d in patient_data[item] for dt in patient_data[item][d] if dt[0] > reference_date_start and dt[0] < reference_date_end]
-    for item in ['address','email','zip']:
-        if item in [*patient_data]:
-            dates += [dt[0] for dt in patient_data[item] if dt[0] > reference_date_start and dt[0] < reference_date_end]
-    if 'odate' in [*patient_data]:
-        dates += [dt for dt in patient_data['odate'] if dt > reference_date_start and dt < reference_date_end]
-    res[0] = len(set(dates))
+    dates = set()
+    for key, vals in patient_data.items():
+        if key == 'bdate':
+            continue
+        if isinstance(vals, dict):
+            dates.update(el[0] for lst in vals.values() for el in lst if reference_date_start <= el[0] <= reference_date_end)
+        # elif isinstance(vals, list):
+        #     if isinstance(vals[0], list):
+        #         dates.update(el[0] for el in vals if reference_date_start < el[0] < reference_date_end)
+        #     else:
+        #         dates.update(el for el in vals if reference_date_start < el < reference_date_end)
+        elif isinstance(vals, datetime.datetime):
+            if reference_date_start <= vals <= reference_date_end:
+                dates.update({vals})
+        else:
+            continue
+    res[0] = len(dates)
     return res
 
+@if_data_nonexistent
 def build_features_mat_icd(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=int)
     if 'diags' not in maternal_data:
@@ -394,6 +433,8 @@ def build_features_mat_icd(patient_data, maternal_data, maternal_hist_data, lat_
             except KeyError:
                 pass #print('--->',diag.replace('.','').strip()[0:-1])
     return res
+
+@if_data_nonexistent
 def build_features_nb_icd(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=int)
     if 'nbdiags' not in maternal_data:
@@ -407,6 +448,8 @@ def build_features_nb_icd(patient_data, maternal_data, maternal_hist_data, lat_l
             except KeyError:
                 pass #print('--->',diag.replace('.','').strip()[0:-1])
     return res
+
+@if_data_nonexistent
 def build_features_mat_race(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'race' not in maternal_data:
@@ -416,6 +459,7 @@ def build_features_mat_race(patient_data, maternal_data, maternal_hist_data, lat
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_mat_ethn(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'ethnicity' not in maternal_data:
@@ -425,6 +469,7 @@ def build_features_mat_ethn(patient_data, maternal_data, maternal_hist_data, lat
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_mat_lang(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'lang' not in maternal_data:
@@ -434,6 +479,7 @@ def build_features_mat_lang(patient_data, maternal_data, maternal_hist_data, lat
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_mat_natn(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'nationality' not in maternal_data:
@@ -443,6 +489,7 @@ def build_features_mat_natn(patient_data, maternal_data, maternal_hist_data, lat
         res[feature_index[code]] = True
     return res
 
+@if_data_nonexistent
 def build_features_mat_marriage(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'marriage' not in maternal_data:
@@ -451,6 +498,8 @@ def build_features_mat_marriage(patient_data, maternal_data, maternal_hist_data,
     if code in feature_index and pd.notnull(code):
         res[feature_index[code]] = True
     return res
+
+@if_data_nonexistent
 def build_features_mat_birthpl(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=bool)
     if 'birthplace' not in maternal_data:
@@ -459,6 +508,8 @@ def build_features_mat_birthpl(patient_data, maternal_data, maternal_hist_data, 
     if code in feature_index and pd.notnull(code):
         res[feature_index[code]] = True
     return res
+
+@if_data_nonexistent
 def build_features_mat_agedel(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers):
     res = np.zeros(len(feature_headers), dtype=int)
     if 'agedeliv' not in maternal_data:
@@ -470,6 +521,8 @@ def build_features_mat_agedel(patient_data, maternal_data, maternal_hist_data, l
 
 ##### FUNCTIONS TO BUILD FEATURES FOR HISTORICAL MATERNAL DATA ####
 def mother_child_map(patient_data, maternal_data, maternal_hist_data):
+    if maternal_data == {}:
+        return {}
     child_mrn = set(np.array([patient_data[k]['mrn'] for k in patient_data.keys()])) & set(np.nan_to_num(np.array([*maternal_data])).astype(int).astype(str))
     mom_mrn = set(maternal_hist_data.keys()) & set([maternal_data[k]['mom_mrn'] for k in maternal_data.keys()])
     keys = [k for k in patient_data.keys() if str(patient_data[k]['mrn']) in child_mrn]
@@ -481,6 +534,7 @@ def mother_child_map(patient_data, maternal_data, maternal_hist_data):
             mother_child_dic[maternal_data[patient_data[k]['mrn']]['mom_mrn']] = {patient_data[k]['mrn']: patient_data[k]['bdate']}
     return mother_child_dic
 
+@if_data_nonexistent
 def build_features_mat_hist_value(patient_data, maternal_data, maternal_hist_data, lat_lon_data, env_data, reference_date_start, reference_date_end, feature_index, feature_headers, mother_child_data, output_type, measurement, period):
     """
     Function to process maternal doctor visits.
@@ -786,6 +840,7 @@ def build_feature_matrace_index():
             feature_index[code] = [ix]
     feature_headers = ['Maternal-race:'+ i for i in codesNnames]
     return feature_index, feature_headers
+
 def build_feature_matnatn_index():
     try:
         codesNnames = [l.strip().decode('utf-8') for l in open(config_file.BM_NationalityList, 'rb').readlines()]
@@ -985,7 +1040,7 @@ def build_feature_census_index(env_dic):
                 if k not in feature_index:
                     feature_index[k] = counter
                     counter += 1
-    feature_headers = ['Census:'+ i for i in feature_index]
+    feature_headers = [''.join(('Census:', i)) for i in feature_index]
     return feature_index, feature_headers
 
 def build_feature_race_index():
@@ -996,13 +1051,14 @@ def build_feature_race_index():
     feature_index = {}
     feature_headers = []
     for (ix, codeline) in enumerate(codesNnames):
-        code = codeline.strip()
-        if code in feature_index:
-            feature_index[code].append(ix)
-            # print('double!!', icd_code)
-        else:
-            feature_index[code] = [ix]
-    feature_headers = ['Race:'+ i for i in codesNnames]
+        codes = codeline.strip().split('#')[0]
+        descr = codeline.strip().split('#')[1].strip()
+        for code in codes.split(' | '):
+            if code in feature_index:
+                feature_index[code.strip()].append(ix)
+            else:
+                feature_index[code.strip()] = [ix]
+        feature_headers.append(''.join(('Race:',descr)))
     return feature_index, feature_headers
 
 def build_feature_lab_index():
@@ -1154,6 +1210,23 @@ def build_feature_num_visits_index():
 def get_obesity_label_bmi(pct, bmi, age, gender):
     """
     Returns the obesity label as underweight, normal, overweight, obese, class I or class II severe obesity
+
+    Parameters
+    ----------
+    pct : float or int
+        Percentile for patient's BMI given their age and gender.
+    bmi : float or int
+        Patient's BMI.
+    age : float or int
+        Patient's age in years.
+    gender : int
+        0 : Male
+        1 : Female
+
+    Returns
+    -------
+    label : str
+        Outcome label for a patient's BMI given their age and gender.
     """
     if 0 <= pct < 0.05:
         return 'underweight'
@@ -1168,10 +1241,32 @@ def get_obesity_label_bmi(pct, bmi, age, gender):
             return 'class I severe obesity'
         else:
             return 'obese'
+    else:
+        return 'none'
 
-def get_obesity_label_wfl(pct, ht, wt, gender):
+def get_obesity_label_wfl(pct, ht, wt, gender, units='usa'):
     """
     Returns the obesity label as underweight, normal, overweight, obese, class I or class II severe obesity
+
+    Parameters
+    ----------
+    pct : int or float
+        Percentile for patient's weight for length.
+    ht : int or float
+        Patient's height.
+    wt : int or float
+        Patient's weight.
+    gender : int
+        0 : Male.
+        1 : Female.
+    Units : str, default 'usa'
+        'usa' : uses inches and pounds for height and weight, respectively.
+        'metric' : uses centimeters and kilograms for height and weigth, respectively.
+
+    Returns
+    -------
+    label : str
+        CDC classifcation for a patient's weight for length percentile.
     """
     if 0 <= pct < 0.05:
         return 'underweight'
@@ -1180,33 +1275,50 @@ def get_obesity_label_wfl(pct, ht, wt, gender):
     elif 0.85 <= pct < 0.95:
         return 'overweight'
     elif 0.95 <= pct < 1:
-        if zscore.severe_obesity_wfl(gender, ht, wt, units='usa', severity=2):
+        if zscore.severe_obesity_wfl(gender, ht, wt, units=units, severity=2):
             return 'class II severe obesity'
-        elif zscore.severe_obesity_wfl(gender, ht, wt, units='usa', severity=1):
+        elif zscore.severe_obesity_wfl(gender, ht, wt, units=units, severity=1):
             return 'class I severe obesity'
         else:
             return 'obese'
+    else:
+        return 'none'
 
 def get_final_bmi(data_dic, agex_low, agex_high, mrnsForFilter=[], filter=True):
     """
-    Function to get the distinct bmi percentile readings for predictions.
-    Returns outcome percentiles and labels
-    #### PARAMETERS ####
-    data_dic: dictionary of patient data
-    agex_low: low age range for outcome prediction
-    agex_high: high age range for outcome prediction
-    mrnsForFilter: list of mrns to get outcomes for
-    filter: default==True; if True returns mrn filtered data only, otherwise returns all data with either a 0 or ''
+    Function to get the distinct BMI percentile readings for predictions.
+    
+    Parameters
+    ----------
+    data_dic : dict
+        Dictionary of patient data
+    agex_low : int or float
+        Lower bound for prediction window.
+    agex_high : int or float
+        Upper bound for prediction window.
+    mrnsForFilter : list
+        List of MRNs for which data will be produced.
+    filter : bool, default True
+        If True returns mrn filtered data only, otherwise returns all data with either a 0 or '' for patient's with no data available.
+    
+    Returns
+    -------
+    outcome : array, shape (n_samples, ), dtype float
+        Median BMI reading for all readings in the prediction window.
+    outcome_pct : array, shape (n_samples, ), dtype float
+        CDC percentile corresponding to the BMI, age, and gender of patient.
+    outcome_labels : array, shape (n_samples, ), dtype str
+        CDC label for a patient's BMI percentile.
     """
-    outcome = np.zeros(len(data_dic.keys()), dtype=float)
-    outcome_pct = np.zeros(len(data_dic.keys()), dtype=float)
-    outcome_labels = [''] * len(data_dic.keys())
-    indices = np.zeros(len(data_dic.keys()))
+    outcome = np.zeros(len(data_dic), dtype=float)
+    outcome_pct = np.zeros(len(data_dic), dtype=float)
+    outcome_labels = ['none'] * len(data_dic)
+    indices = np.zeros(len(data_dic))
     for (ix, k) in enumerate(data_dic):
         if (len(mrnsForFilter) > 0) & (str(data_dic[k]['mrn']) not in mrnsForFilter):
             continue
         bmi, pct, label = get_final_bmi_single(data_dic[k], agex_low, agex_high)
-        if pct == 0 and label == '':
+        if pct == 0 and label == 'none':
             continue
         outcome[ix] = bmi
         outcome_pct[ix] = pct
@@ -1221,18 +1333,34 @@ def get_final_bmi(data_dic, agex_low, agex_high, mrnsForFilter=[], filter=True):
 def get_latest_reading(data_dic, months_from, months_to, mrnsForFilter=[], zero_filter=True):
     """
     Function to get the distinct bmi percentile readings for predictions.
-    Returns outcome percentiles and labels
-    #### PARAMETERS ####
-    data_dic: dictionary of patient data
-    months_from: low age range for valid data readings
-    months_to: high age range for valid data readings
-    mrnsForFilter: list of mrns to get outcomes for
-    zero_filter: default==True; if True returns mrn filtered data only, otherwise returns all data with either a 0 or ''
+
+    Parameters
+    ----------
+    data_dic : dict
+        Data dictionary of patient data
+    months_from : int
+        Lower bound on data consideration window.
+    months_to : int
+        Upper bound on data consideration window.
+    mrnsForFilter : list 
+        List of mrns that will be skipped.
+    zero_filter : bool, default True
+        Indicator to return mrn filtered data only or all data.
+
+    Returns
+    -------
+    outcome : array, shape (len(data_dic),)
+        Weight for length or BMI if months_to is less than or equal to or greather than 24, respectively.
+        If zero_filter, then shape is smaller.
+    outcome_pct : array, shape (len(data_dic),)
+        Percentile for outcome data. If zero_filter, then shape is smaller.
+    outcome_labels : array, shape (len(data_dic),)
+        String output for label class ranging from underweight to class II severe obesity.
     """
-    outcome = np.zeros(len(data_dic.keys()), dtype=float) if months_to > 24 else np.zeros((len(data_dic.keys()),2), dtype=float)
-    outcome_pct = np.zeros(len(data_dic.keys()), dtype=float)
-    outcome_labels = [''] * len(data_dic.keys())
-    indices = np.zeros(len(data_dic.keys()))
+    outcome = np.zeros(len(data_dic), dtype=float) if months_to > 24 else np.zeros((len(data_dic), 2), dtype=float)
+    outcome_pct = np.zeros(len(data_dic), dtype=float)
+    outcome_labels = [''] * len(data_dic)
+    indices = np.zeros(len(data_dic))
     for (ix, k) in enumerate(data_dic):
         if (len(mrnsForFilter) > 0) & (str(data_dic[k]['mrn']) not in mrnsForFilter):
             continue
@@ -1251,7 +1379,25 @@ def get_latest_reading(data_dic, months_from, months_to, mrnsForFilter=[], zero_
 
 def get_final_bmi_single(patient_data, agex_low, agex_high):
     """
-    Function to get the BMI percentile and outcome label for an individual patient
+    Function to get the BMI percentile and outcome label for an individual patient.
+
+    Parameters
+    ----------
+    patient_data : dict
+        Data dictionary for a single patient.
+    agex_low : int or float
+        Lower bound on age for prediction window.
+    agex_high : int or float
+        Upper bound on age for prediction window.
+
+    Returns
+    -------
+    BMI : float
+        Median BMI value for all BMI readings between agex_low and agex_low. 0 if there is no valid data.
+    BMI_pct : float
+        Percentile for the BMI value with respect to the median age for all readings in the data. 0 if there is no valid data.
+    obese_label : string
+        Label ranging from underweight to class II severe obesity for a patient's BMI and age. '' if there is no valid data.
     """
     bdate = patient_data['bdate']
     gender = patient_data['gender']
@@ -1272,14 +1418,31 @@ def get_final_bmi_single(patient_data, agex_low, agex_high):
         bmi_med = np.median(np.array(BMI_list))
         return bmi_med, pct_med, get_obesity_label_bmi(pct_med, bmi_med, age_med, gender)
     elif BMI_pct_list == []:
-        return 0, 0, ''
+        return 0, 0, 'none'
     else:
         return BMI_list[0], BMI_pct_list[0], get_obesity_label_bmi(BMI_pct_list[0], BMI_list[0], age_list[0], gender)
 
 def get_latest_label_single(patient_data, months_from, months_to):
     """
     Function to get the BMI or WFL percentile and outcome label for an individual patient
-    Returns age (in years), the bmi or wfl percentile, and the cdc label for underweight, normal, overweight, obese, class I severe obesity, and class II severe obesity
+    
+    Parameters
+    ----------
+    patient_data : dict
+        Data dictionary for patient.
+    months_from : int
+        Lower bound on data validity window.
+    months_to : int
+        Upper bound on data validity window.
+
+    Returns
+    -------
+    age : float.
+        Age of patient at reading in years
+    percentile : float
+        BMI or wfl percentile for patient a patitent under or over 2 years of age, respectively.
+    label : 
+        CDC label for underweight, normal, overweight, obese, class I severe obesity, and class II severe obesity coresponding with percentile.
     """
     bdate = patient_data['bdate']
     gender = patient_data['gender']
@@ -1287,7 +1450,7 @@ def get_latest_label_single(patient_data, months_from, months_to):
     start_date = bdate + relativedelta(months=months_from)
     end_date = bdate + relativedelta(months=months_to)
     age_final = 0
-    label_final = ''
+    label_final = 'none'
     if months_to > 24:
         bmi_final = 0
         bmi_pct_final = 0
@@ -1318,18 +1481,31 @@ def get_latest_label_single(patient_data, months_from, months_to):
 def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic, env_dic, agex_low, agex_high, months_from, months_to, percentile, prediction='obese', mrnsForFilter=[]):
     """
     Creates the base data set to be used in analysis for obesity prediction.
-    #### PARAMETERS ####
-    data_dic: data dictionary of children's EHR
-    data_dic_moms: data dictionary of of mother's EHR at time of child's birth
-    data_dic_hist_moms: data dictionary of mother's EHR that is within the same hospital system
-    lat_lon_dic: data dictionary of mother's geocoded address information
-    env_dic: data dictionary of census features
-    agex_low: low age (in years) for prediction
-    agex_high: high age (in years) for prediction
-    months_from: start date (in months) for date filter
-    months_to: end date (in months) for date filter
-    percentile: set to False
-    prediction: default = 'obese'. obesity threshold for bmi/age percentile for outcome class.
+
+    Parameters
+    ----------
+    data_dic : dict
+        Data dictionary of children's EHR.
+    data_dic_moms : dict
+        Data dictionary of of mother's EHR at time of child's birth.
+    data_dic_hist_moms : dict
+        Data dictionary of mother's EHR that is within the same hospital system.
+    lat_lon_dic : dict
+        Data dictionary of the child's or mother's geocoded address information.
+    env_dic : dict
+        Data dictionary of census features. --------- DOUBLE CHECK THE FORMAT OF THIS DATA!!!!
+    agex_low : int or float
+        Lower bound on prediction window.
+    agex_high : int or float
+        Upper bound on prediction window.
+    months_from : int
+        Lower bound on data validity window.
+    months_to int
+        Upper bound on data validity window.
+    percentile : bool, default False
+        Filter to ensure certain types of features exist for each data point.
+    prediction : str, default 'obese'
+        Obesity threshold for bmi/age percentile for outcome class.
         Source: https://www.cdc.gov/obesity/childhood/defining.html
         'underweight': 0.0 <= bmi percentile < 0.05
         'normal': 0.05 <= bmi percentile < 0.85
@@ -1339,18 +1515,40 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
         'class II severe obesity': class II severe obesity; 140% of the 95th percentile
         'multi': multiclass label for columns ['underweight','normal','overweight','obese','class I severe obesity','class II severe obesity']
             NOTE: will return redundant labels for obese and severe obese classes as they are a subset
-    mrnsForFilter: default = []. mrns to create data for.
+    mrnsForFilter : list, default []
+        Filter for valid MRNs. All other data will be skipped.
+
+    Returns
+    -------
+    features : array, shape (n_samples, n_features)
+        Data array.
+    outcome : array, shape (n_samples, )
+        Target data.
+    outcomelabels : array, shape (n_samples, )
+        Target labels.
+    headers : list, shape (n_features)
+        Feature names corresponding to columns of features.
+    mrns : array, shape (n_samples, )
+        MRNs for patients with created data.
     """
 
+    multi_ix = {
+        'underweight': 0,
+        'normal': 1,
+        'overweight': 2,
+        'obese': 3,
+        'class I severe obesity': [3, 4], 
+        'class II severe obesity': [3, 5],
+        'none': 6
+    }
     outcome = np.zeros(len(data_dic.keys()), dtype=float)
     if prediction != 'multi':
-        np.zeros(len(data_dic.keys()), dtype=float)
+        outcomelabels = np.zeros(len(data_dic.keys()), dtype=float)
         multi = False
     else:
-        outcomelabels = np.zeros((len(data_dic.keys()), 6), dtype=float)
+        outcomelabels = np.zeros((len(data_dic.keys()), len(multi_ix)), dtype=float)
         multi = True
-        multi_ix = {'underweight':0,'normal':1,'overweight':2,'obese':3, 'class I severe obesity':[3,4], 'class II severe obesity':[3,5]}
-    if prediction not in ('underweight','normal','overweight','obese','class I severe obesity','class II severe obesity','multi'):
+    if prediction not in multi_ix.keys() and not multi:
         warnings.warn('Invalid prediction parameter. Using default "obese" thresholds.')
         prediction = 'obese'
 
@@ -1440,30 +1638,30 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
         (build_features_mat_birthpl, [ feature_index_mat_birthpl, feature_headers_mat_birthpl]),
         (build_features_mat_agedel, [ feature_index_mat_agedeliv, feature_headers_age_deliv]),
         #historical maternal features
-        (build_features_mat_hist_vitalsAverage_prePregnancy, [feature_index_vitalLatest, ['Maternal '+h+'-prePregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_vitalsAverage_firstTri, [feature_index_vitalLatest, ['Maternal '+h+'-firstTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_vitalsAverage_secTri, [feature_index_vitalLatest, ['Maternal '+h+'-secondTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_vitalsAverage_thirdTri, [feature_index_vitalLatest, ['Maternal '+h+'-thirdTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_vitalsAverage_postPregnancy, [feature_index_vitalLatest, ['Maternal '+h+'-postPregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_vitalsAverage_otherPregnancy, [feature_index_vitalLatest, ['Maternal '+h+'-otherPregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_prePregnancy, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-prePregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_firstTri, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-firstTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_secTri, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-secondTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_thrirdTri, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-thirdTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_postPregnancy, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-postPregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_labsAverage_otherPregnancy, [feature_index_mat_hist_labsAverage, ['Maternal '+h+'-otherPregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
-        (build_features_mat_hist_icdCount_prePregnancy, [feature_index_mat_hist_icd, ['Maternal '+h+'-prePregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_icdCount_firstTri, [feature_index_mat_hist_icd, ['Maternal '+h+'-firstTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_icdCount_secTri, [feature_index_mat_hist_icd, ['Maternal '+h+'-secondTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_icdCount_thrirdTri, [feature_index_mat_hist_icd, ['Maternal '+h+'-thirdTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_icdCount_postPregnancy, [feature_index_mat_hist_icd, ['Maternal '+h+'-postPregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_icdCount_otherPregnancy, [feature_index_mat_hist_icd, ['Maternal '+h+'-otherPregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_prePregnancy, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-prePregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_firstTri, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-firstTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_secTri, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-secondTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_thrirdTri, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-thirdTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_postPregnancy, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-postPregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic]),
-        (build_features_mat_hist_proceduresCount_otherPregnancy, [feature_index_mat_hist_procsAverage, ['Maternal '+h+'-otherPregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic])
+        (build_features_mat_hist_vitalsAverage_prePregnancy, [feature_index_vitalLatest, ['Maternal ' + h + '-prePregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_vitalsAverage_firstTri, [feature_index_vitalLatest, ['Maternal ' + h + '-firstTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_vitalsAverage_secTri, [feature_index_vitalLatest, ['Maternal ' + h + '-secondTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_vitalsAverage_thirdTri, [feature_index_vitalLatest, ['Maternal ' + h + '-thirdTrimester' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_vitalsAverage_postPregnancy, [feature_index_vitalLatest, ['Maternal ' + h + '-postPregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_vitalsAverage_otherPregnancy, [feature_index_vitalLatest, ['Maternal ' + h + '-otherPregnancy' for h in feature_headers_vitalsLatest], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_prePregnancy, [feature_index_mat_hist_labsAverage, [h+'-prePregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_firstTri, [feature_index_mat_hist_labsAverage, [h+'-firstTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_secTri, [feature_index_mat_hist_labsAverage, [h+'-secondTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_thrirdTri, [feature_index_mat_hist_labsAverage, [h+'-thirdTrimester' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_postPregnancy, [feature_index_mat_hist_labsAverage, [h+'-postPregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_labsAverage_otherPregnancy, [feature_index_mat_hist_labsAverage, [h+'-otherPregnancy' for h in feature_headers_mat_hist_labs], mother_child_dic]),
+        (build_features_mat_hist_icdCount_prePregnancy, [feature_index_mat_hist_icd, [h+'-prePregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_icdCount_firstTri, [feature_index_mat_hist_icd, [h+'-firstTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_icdCount_secTri, [feature_index_mat_hist_icd, [h+'-secondTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_icdCount_thrirdTri, [feature_index_mat_hist_icd, [h+'-thirdTrimester' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_icdCount_postPregnancy, [feature_index_mat_hist_icd, [h+'-postPregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_icdCount_otherPregnancy, [feature_index_mat_hist_icd, [h+'-otherPregnancy' for h in feature_headers_mat_hist_icd], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_prePregnancy, [feature_index_mat_hist_procsAverage, [h+'-prePregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_firstTri, [feature_index_mat_hist_procsAverage, [h+'-firstTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_secTri, [feature_index_mat_hist_procsAverage, [h+'-secondTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_thrirdTri, [feature_index_mat_hist_procsAverage, [h+'-thirdTrimester' for h in feature_headers_mat_hist_procs], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_postPregnancy, [feature_index_mat_hist_procsAverage, [h+'-postPregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic]),
+        (build_features_mat_hist_proceduresCount_otherPregnancy, [feature_index_mat_hist_procsAverage, [h+'-otherPregnancy' for h in feature_headers_mat_hist_procs], mother_child_dic])
         # (build_features_mat_hist_medsAverage_prePregnancy, [feature_index_mat_hist_medsAverage, [h+'-prePregnancy' for h in feature_headers_mat_hist_meds], mother_child_dic]),
         # (build_features_mat_hist_medsAverage_firstTri, [feature_index_mat_hist_medsAverage, [h+'-firstTrimester' for h in feature_headers_mat_hist_meds], mother_child_dic]),
         # (build_features_mat_hist_medsAverage_secTri, [feature_index_mat_hist_medsAverage, [h+'-secondTrimester' for h in feature_headers_mat_hist_meds], mother_child_dic]),
@@ -1486,9 +1684,8 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
             continue
         flag=False
         bmi, pct, label = get_final_bmi_single(data_dic[k], agex_low, agex_high)
-        if pct == 0 and label ==  '':
+        if pct == 0 and label ==  'none':
             outcomelabels[ix] = 0
-            continue
         outcome[ix] = bmi
         if not multi:
             if prediction == 'obese':
@@ -1496,15 +1693,15 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
             else:
                 outcomelabels[ix] = 1 if prediction == label else 0
         else:
-            outcomelabels[ix,multi_ix[label]] = 1
+            outcomelabels[ix, multi_ix[label]] = 1
 
 
         bdate = data_dic[k]['bdate']
         mrns[ix] = data_dic[k]['mrn']
-        if data_dic[k]['mrn'] in data_dic_moms:
-            maternal_data = data_dic_moms[data_dic[k]['mrn']]
-            if data_dic_moms[data_dic[k]['mrn']]['mom_mrn'] in data_dic_hist_moms:
-                maternal_hist_data = data_dic_hist_moms[data_dic_moms[data_dic[k]['mrn']]['mom_mrn']]
+        if mrns[ix] in data_dic_moms:
+            maternal_data = data_dic_moms[mrns[ix]]
+            if data_dic_moms[mrns[ix]]['mom_mrn'] in data_dic_hist_moms:
+                maternal_hist_data = data_dic_hist_moms[data_dic_moms[mrns[ix]]['mom_mrn']]
                 try:
                     mother_child_data = mother_child_dic[data_dic_moms[k]['mom_mrn']]
                 except:
@@ -1516,10 +1713,10 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
             maternal_hist_data = {}
             mother_child_data = {}
         try:
-            lat_lon_item = lat_lon_dic[str(data_dic[k]['mrn'])]
+            lat_lon_item = lat_lon_dic[str(mrns[ix])]
         except:
             try:
-                lat_lon_item = lat_lon_dic[data_dic[k]['mrn']]
+                lat_lon_item = lat_lon_dic[mrns[ix]]
             except:
                 lat_lon_item = {}
         ix_pos_start = 0
@@ -1541,9 +1738,8 @@ def call_build_function(data_dic, data_dic_moms, data_dic_hist_moms, lat_lon_dic
             except IndexError:
                 ix_pos_end = features.shape[1]
 
-
     # Calculate the Z-Scores for each of the vital periods and the gain between them
-    zscore_headers = ['Vital: Wt for Length ZScore-AtBirth','Vital: Wt for Length ZScore-avg0to1','Vital: Wt for Length ZScore-avg1to3','Vital: Wt for Length ZScore-avg3to5','Vital: Wt for Length ZScore-avg5to7','Vital: Wt for Length ZScore-avg7to10','Vital: Wt for Length Zscore-avg10to13','Vital: Wt for Length ZScore-avg13to16','Vital: Wt for Length ZScore-avg16to19','Vital: Wt for Length ZScore-avg19to24','Vital: Wt for Length ZScore-latest']
+    zscore_headers = ['Vital: Wt for Length ZScore-AtBirth','Vital: Wt for Length ZScore-avg0to1','Vital: Wt for Length ZScore-avg1to3','Vital: Wt for Length ZScore-avg3to5','Vital: Wt for Length ZScore-avg5to7','Vital: Wt for Length ZScore-avg7to10','Vital: Wt for Length ZScore-avg10to13','Vital: Wt for Length ZScore-avg13to16','Vital: Wt for Length ZScore-avg16to19','Vital: Wt for Length ZScore-avg19to24','Vital: Wt for Length ZScore-latest']
     zscore_gain_headers = ['Vital: Wt for Length ZScore-gain0to3','Vital: Wt for Length ZScore-gain1to5','Vital: Wt for Length ZScore-gain3to7','Vital: Wt for Length ZScore-gain5to10','Vital: Wt for Length ZScore-gain7to13','Vital: Wt for Length ZScore-gain10to16','Vital: Wt for Length ZScore-gain13to19','Vital: Wt for Length ZScore-gain16to24']
     headers += zscore_headers + zscore_gain_headers
 
